@@ -11,38 +11,79 @@ import { createOrderHtml, html, updateDraggingHtml, moveToColumn } from "./view.
  *
  * @param {Event} event 
 */
-const handleDragOver = (event) => {
-  event.preventDefault();
-  const path = event.path || event.composedPath()
-  let column = null
+const dragAndDrop = (items, containers) => {
+  const handleDragOver = (event) => {
+    event.preventDefault();
+    const path = event.path || event.composedPath();
+    let column = null;
 
-  for (const element of path) {
-    const { area } = element.dataset
-    if (area) {
-      column = area
-      break;
+    for (const element of path) {
+      const { area } = element.dataset;
+      if (area) {
+        column = area;
+        break;
+      }
     }
+
+    if (!column) return;
+
+
+    containers.forEach(col => {
+      col.style.backgroundColor = col.dataset.area === column ? "green" : "";
+      col.removeEventListener("drop", handleDrop);
+      if (col.dataset.area === column) {
+        col.addEventListener("drop", handleDrop);
+      }
+    });
   }
 
-  if (!column) return
-  updateDragging({ over: column })
-  updateDraggingHtml({ over: column })
-  htmlArea.addEventListener('dragover', handleDragOver);
-}
+  const handleDrop = (event) => {
+    event.preventDefault();
+    const { order } = event.dataTransfer.getData("text/plain");
+    const targetColumn = event.currentTarget.dataset.area;
 
-/*
-const handleDragStart = (event) => {
-event.preventDefault();
+    const currentColumn = document.querySelector(`[data-column-orders*="${order}"]`);
+    if (currentColumn) {
+      const orders = currentColumn.dataset.columnOrders.split(",");
+      const index = orders.indexOf(order);
+      if (index > -1) {
+        orders.splice(index, 1);
+        currentColumn.dataset.columnOrders = orders.join(",");
+      }
+    }
 
-}
-htmlColumn.addEventListener('dragstart', handleDragStart);
+    const newColumn = document.querySelector(`[data-area="${targetColumn}"]`);
+    if (newColumn) {
+      const orders = newColumn.dataset.columnOrders.split(",");
+      orders.push(order);
+      newColumn.dataset.columnOrders = orders.join(",");
+    }
+
+    containers.forEach(col => {
+      col.style.backgroundColor = "";
+      col.removeEventListener("drop", handleDrop);
+    });
+  }
+
+  items.forEach(item => {
+    item.draggable = true;
+    item.addEventListener("dragstart", (event) => {
+      event.dataTransfer.setData("", event.currentTarget.dataset.order);
+    });
+  });
+
+  containers.forEach(col => {
+    col.addEventListener("dragover", handleDragOver);
+    col.addEventListener("drop", handleDrop);
+  });
+};
+
+const allOrders = document.querySelectorAll("[data-order]");
+const allColumns = document.querySelectorAll("[data-area]");
+dragAndDrop(allOrders, allColumns);
 
 
-const handleDragEnd = () => {
 
-}
-htmlColumn.addEventListener('dragend', handleDragEnd);
-*/
 
 //Open Help Overlay
 
@@ -166,36 +207,54 @@ const handleEditSubmit = (event) => {
   const id = html.edit.id.value;
   const title = html.edit.title.value;
   const table = html.edit.table.value;
-  
+  const status = html.edit.status.value; // get the status value from the form
+
+
   const order = state.orders.find((order) => order.id === id);
   if (order) {
   order.title = title;
   order.table = table;
-// update the order element on the page
-const orderElement = document.querySelector(`.order[data-id="${id}"]`);
-if (orderElement) {
-  orderElement.querySelector('[data-order-title]').textContent = title;
-  orderElement.querySelector('[data-order-table]').textContent = table;
+  order.status = status; // update the order's status
+ 
+    // update the order element on the page
+    const orderElement = document.querySelector(`.order[data-id="${id}"]`);
+    if (orderElement) {
+      orderElement.querySelector('[data-order-title]').textContent = title;
+      orderElement.querySelector('[data-order-table]').textContent = table;
+      orderElement.querySelector('[data-order-status]').textContent = status; // update the order's status on the page
+      orderElement.dataset.column = table; // update the order's column on the page // the update does not update in the columns
+    }
+
+     // move the order to the selected column
+     const columnElement = document.querySelector(`[data-column="${table}"]`);
+     if (columnElement) {
+       columnElement.querySelector('.orders').appendChild(orderElement);
+     }
 };
 };
 
 // close the "Edit Order" overlay
 html.edit.overlay.close();
-};
+
 
 // add an event listener to the "submit" button in the "Edit Order" form
 html.edit.form.addEventListener('submit', handleEditSubmit);
 
 
-//Delete Button
 const handleDelete = () => {
   const id = html.edit.id.value;
   delete state.orders[id]; // remove order from state
-  document.id.innerHTML = '';
   html.edit.overlay.close(); // close the Edit Order overlay
-  html.edit.form.reset(); // reset the form fields
+  html.form.reset(); // reset the form fields // issue is here, the delete button does not clear the form field
 };
-html.edit.delete.addEventListener('click', handleDelete);
+
+html.edit.delete.addEventListener('click', (event) => {
+  event.preventDefault();
+  handleDelete();
+ 
+
+});
+
 
 //Cancel Button
 const handleEditToggleCancel = () => {
