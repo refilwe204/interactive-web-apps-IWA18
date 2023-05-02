@@ -1,6 +1,5 @@
 import { COLUMNS,state,updateDragging,createOrderData,TABLES} from "./data.js";
 import {createOrderHtml,html, updateDraggingHtml,moveToColumn} from "./view.js";
-
 /**
  * A handler that fires when a user drags over any element inside a column. In
  * order to determine which column the user is dragging over the entire event
@@ -12,54 +11,41 @@ import {createOrderHtml,html, updateDraggingHtml,moveToColumn} from "./view.js";
  *
  * @param {Event} event
  */
-const dragAndDrop = (items, containers) => {
-  const handleDragOver = (event) => {
+
+const handleDragOver = (event) => {
     event.preventDefault();
     const path = event.path || event.composedPath();
-    let column = null;
-    for (const element of path) {
-      const { area } = element.dataset;
-      if (area) {
-        column = area;
+    let column= null;
+    for (const element of path){
+      const {area} = element.dataset;
+      if(area) {
+        column = area
         break;
       }
     }
-    if (!column) return;
-    containers.forEach(col => {
-      col.style.backgroundColor = col.dataset.area === column ? "green" : "";
-      col.removeEventListener("drop", handleDrop);
-      if (col.dataset.area === column) {
-        col.addEventListener("drop", handleDrop);
-      }
-    });
+    if(!column) return;
+    updateDragging({over : column});
+    updateDraggingHtml({over:column });
+    //htmlArea.addEventListener("dragover", handleDragOver);
+  };
+  let dragged;
+  const handleDragStart = (e) => {
+    dragged = e.target;
+  };
+  const handleDragDrop = (f) => {
+    f.target.append(dragged);
+  };
+  const handleDragEnd= (g) =>{
+  const background = g.target.closest("section");
+  background.style.backgroundColor="";
+  };
+  //attach event listeners to each column
+  for (const htmlArea of Object.values(html.area)){
+    htmlArea.addEventListener("dragover", handleDragOver);
+    htmlArea.addEventListener("dragstart", handleDragStart);
+    htmlArea.addEventListener("drop", handleDragDrop);
+    htmlArea.addEventListener("dragend", handleDragEnd);
   }
-  const handleDrop = (event) => {
-    event.preventDefault();
-    const { order } = event.dataTransfer.getData("");
-    const currentColumn = document.querySelector(`[data-column-orders*="${order}"]`);
-    if (currentColumn) {
-      const orders = currentColumn.dataset.columnOrders.split(",");
-      const index = orders.indexOf(order);
-      if (index > -1) {
-        orders.splice(index, 1);
-        currentColumn.dataset.columnOrders = orders.join(",");
-      }
-    }
-    
-    containers.forEach(col => {
-      col.style.backgroundColor = "";
-      col.removeEventListener("drop", handleDrop);
-    });
-  }
-
-  containers.forEach(col => {
-    col.addEventListener("dragover", handleDragOver);
-    col.addEventListener("drop", handleDrop);
-  });
-};
-const allOrders = document.querySelectorAll("[data-order]");
-const allColumns = document.querySelectorAll("[data-area]");
-dragAndDrop(allOrders, allColumns)
 
 
 //----Opens Help screen -----
@@ -74,6 +60,7 @@ const handleAddToggle = () => {
 };
 html.other.add.addEventListener("click", handleAddToggle);
 html.add.cancel.addEventListener("click", handleAddToggle);
+
 //---Submit information ----
 const handleAddSubmit = (event) => {
   event.preventDefault(); // method is used to prevent the browser from executing the default action
@@ -88,13 +75,17 @@ const handleAddSubmit = (event) => {
   html.add.form.reset();
   html.add.overlay.close();
 };
+
 html.add.form.addEventListener("submit", handleAddSubmit);
+
 //----- Opens edit menu -----
 const handleEditToggle = () => {
   html.edit.overlay.toggleAttribute("open");
 };
+
 html.other.grid.addEventListener("click", handleEditToggle);
 html.edit.cancel.addEventListener("click", handleEditToggle);
+
 //----- Submit edited information -----
 const handleEditSubmit = (event) => {
   event.preventDefault(); // method is used to prevent the browser from executing the default action
@@ -157,10 +148,10 @@ const handleDelete = (event) => {
       break;
     }
   }
-    // Delete the order element with the new data
-    const newOrder = createOrderHtml(order);
-    const oldOrder= document.querySelector(`[data-id="${id}"]`);
-    oldOrder.remove(newOrder);
-    html.edit.overlay.close();
-  };
-  html.edit.delete.addEventListener("click", handleDelete);
+  // Delete the order element with the new data
+  const newOrder = createOrderHtml(order);
+  const oldOrder= document.querySelector(`[data-id="${id}"]`);
+  oldOrder.remove(newOrder);
+  html.edit.overlay.close();
+};
+html.edit.delete.addEventListener("click", handleDelete);
