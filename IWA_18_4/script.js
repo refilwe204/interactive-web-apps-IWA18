@@ -26,6 +26,7 @@ const handleDragOver = (event) => {
     if(!column) return;
     updateDragging({over : column});
     updateDraggingHtml({over:column });
+  
     //htmlArea.addEventListener("dragover", handleDragOver);
   };
   let dragged;
@@ -39,6 +40,7 @@ const handleDragOver = (event) => {
   const background = g.target.closest("section");
   background.style.backgroundColor="";
   };
+  
   //attach event listeners to each column
   for (const htmlArea of Object.values(html.area)){
     htmlArea.addEventListener("dragover", handleDragOver);
@@ -54,6 +56,7 @@ const handleHelpToggle = () => {
 };
 html.help.cancel.addEventListener("click", handleHelpToggle);
 html.other.help.addEventListener("click", handleHelpToggle);
+
 //------Opens Add order menu------
 const handleAddToggle = () => {
   html.add.overlay.toggleAttribute("open");
@@ -96,6 +99,7 @@ const handleEditSubmit = (event) => {
     id: state.orders,
     column: html.edit.column.value,
   };
+
   const order = { id, title, table, created, column };
   // Find the index of the order to be updated
   let orderId = -1; //-1 allows us to check if an order index has been found
@@ -106,6 +110,7 @@ const handleEditSubmit = (event) => {
       break;
     }
   }
+
   // Update the order data in the state object
   state.orders[orderId] = createOrderData(order);
   // Update the order element with the new data
@@ -128,6 +133,7 @@ const handleEditSubmit = (event) => {
   }
   html.edit.overlay.close();
 };
+// Delete button to delete both the edit overlay and the order
 html.edit.form.addEventListener("submit", handleEditSubmit);
 const handleDelete = (event) => {
   event.preventDefault(); // method is used to prevent the browser from executing the default action
@@ -139,7 +145,7 @@ const handleDelete = (event) => {
     column: html.edit.column.value,
   };
   const order = { id, title, table, created, column };
-  // Find the index of the order to be updated
+  // Find the order thats need  to be updated
   let orderId = -1; //-1 allows us to check if an order index has been found
   // Find the order element in the HTML
   for (let i = 0; i < state.orders.length; i++) {
@@ -148,6 +154,7 @@ const handleDelete = (event) => {
       break;
     }
   }
+
   // Delete the order element with the new data
   const newOrder = createOrderHtml(order);
   const oldOrder= document.querySelector(`[data-id="${id}"]`);
